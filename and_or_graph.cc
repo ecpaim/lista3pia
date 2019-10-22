@@ -81,39 +81,22 @@ void AndOrGraph::most_conservative_valuation()
     { // enquanto ainda tiver nodos forçados verdadeiros
         NodeID node_id = queue.front();
         queue.pop_front();
-        AndOrGraphNode node = nodes[node_id];
-        node.forced_true = true; // ele é forçado verdadeiro se tá na lista
-        for (const auto &pred : node.predecessor_ids)
+        nodes[node_id].forced_true = true; // ele é forçado verdadeiro se tá na lista
+        for (const auto &pred : nodes[node_id].predecessor_ids)
         {
-            NodeID pred_id = pred;
-            AndOrGraphNode pred_node = AndOrGraph::get_node(pred_id);
-            pred_node.num_forced_successors = pred_node.num_forced_successors + 1; // tem mais um sucessor forçado verdadeiro ( o que saiu da fila )
-            if (pred_node.type == NodeType::OR)
+            nodes[pred].num_forced_successors = nodes[pred].num_forced_successors + 1;
+            if (nodes[pred].type == NodeType::OR && !nodes[pred].forced_true)
             {
                 // tem pelo menos um sucessor forçado verdadeiro -> é forçado verdadeiro
                 queue.push_back(pred);
             }
-            else if (pred_node.type == NodeType::AND)
+            else if (nodes[pred].type == NodeType::AND && !nodes[pred].forced_true)
             {
                 // é and, depende de quantos forçados verdadeiros de suceesores ele tem
-                // modo 1: a variavel num_forced_sucessors é igual ao tamanho dos sucessores
-                if(static_cast<int>(pred_node.successor_ids.size()) == pred_node.num_forced_successors){
+                // : a variavel num_forced_sucessors é igual ao tamanho dos sucessores
+                if(static_cast<int>(nodes[pred].successor_ids.size()) == nodes[pred].num_forced_successors){
                     queue.push_back(pred);
                 }
-                // modo 2: ver cada sucessor
-                // bool flag = true;
-                // for (const auto &succ : pred_node.successor_ids)
-                // {
-                //     AndOrGraphNode sucessor = AndOrGraph::get_node(succ);
-                //     if (sucessor.forced_true == false)
-                //     {
-                //         flag = false;
-                //     }
-                // }
-                // if (flag == true)
-                // {
-                //     queue.push_back(pred);
-                // }
             }
         }
     }
