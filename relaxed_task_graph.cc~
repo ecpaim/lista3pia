@@ -82,6 +82,7 @@ int RelaxedTaskGraph::additive_cost_of_goal() {
    return graph.get_node(goal_node_id).additive_cost;
 
     // TODO: add your code for exercise 2 (c) here.
+    return -1;
 }
 
 int RelaxedTaskGraph::ff_cost_of_goal() {

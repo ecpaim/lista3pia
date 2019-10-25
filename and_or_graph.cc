@@ -6,6 +6,7 @@
 #include <deque>
 #include <iostream>
 #include <queue>
+#include <limits>
 
 using namespace std;
 
@@ -102,6 +103,15 @@ void AndOrGraph::most_conservative_valuation()
     }
 
 }
+int Comparador_mcv::operator()(const AndOrGraphNode *n1, const AndOrGraphNode *n2)
+{
+	if( n1->additive_cost > n2->additive_cost ){
+		return true;	
+	}
+	else {
+		return false;	
+	}
+}
 
 void AndOrGraph::weighted_most_conservative_valuation()
 {
@@ -131,7 +141,71 @@ void AndOrGraph::weighted_most_conservative_valuation()
     /*
       TODO: add your code for exercise 2 (c) here.
     */
+    priority_queue<AndOrGraphNode*,vector<AndOrGraphNode*>,Comparador_mcv> queue;
+	
+
+	//initialize all additive_costs to infinite except the first forced true nodes
+    for (AndOrGraphNode &node : nodes)
+    {
+        node.forced_true = false;
+        node.num_forced_successors = 0;
+        if (node.type == NodeType::AND && node.successor_ids.empty())
+        {
+	   node.additive_cost = 0;         
+	   queue.push(&node);
+         }
+	else{
+	   node.additive_cost = std::numeric_limits<int>::max();	
+	}
+    }
+
+    int new_cost;
+    while(!queue.empty()){
+
+	AndOrGraphNode* nd = queue.top();
+	queue.pop();
+	nd->forced_true = true;
+	for( const auto &pred: nd->predecessor_ids){
+		
+		nodes[pred].num_forced_successors = nodes[pred].num_forced_successors + 1;
+		
+		if( nodes[pred].type== NodeType::OR){		
+			new_cost = nodes[pred].direct_cost + nd->additive_cost;
+		// OR node has a new path with lower cost
+			if(new_cost < nodes[pred].additive_cost){
+				
+				nodes[pred].additive_cost = new_cost;
+				queue.push(&nodes[pred]);
+			}
+			
+		}
+		else if (nodes[pred].type == NodeType::AND){
+		//number of forced true successors of an AND node is increased to the total number of its successors
+			if( static_cast<int>(nodes[pred].successor_ids.size()) == nodes[pred].num_forced_successors){
+				/*
+				If we want to compute Hmax we just need to replace this for loop
+				with one that gets the maximum additive_cost value among the
+				successors of nodes[pred]
+				*/
+				
+				new_cost = 0;
+				for(const auto &succ: nodes[pred].successor_ids){
+					new_cost += nodes[succ].additive_cost;
+				}
+				new_cost += nodes[pred].direct_cost;
+				nodes[pred].additive_cost = new_cost;
+				queue.push(&nodes[pred]);
+				
+			}
+		}	
+	}
+	
+    }
+	
+
+
 }
+
 
 void add_nodes(vector<string> names, NodeType type, AndOrGraph &g, unordered_map<string, NodeID> &ids)
 {
